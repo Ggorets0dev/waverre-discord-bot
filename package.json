@@ -1,0 +1,26 @@
+{
+  "name": "waver.re_discord",
+  "version": "1.0.0",
+  "description": "Extract wav containers from Youtube and play them in voice channels (Discord)",
+  "main": "WaverRE.js",
+  "scripts": {
+    "dev": "nodemon WaverRE.js",
+    "start": "node WaverRE.js"
+  },
+  "author": "Ggorets0",
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/voice": "^0.8.0",
+    "chalk": "^4.1.2",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0",
+    "fast-levenshtein": "^3.0.0",
+    "ffmpeg-static": "^5.0.0",
+    "figlet": "^1.5.2",
+    "nodemon": "^2.0.15",
+    "tweetnacl": "^1.0.3",
+    "yandex-disk": "^0.0.8",
+    "yt-search": "^2.10.3",
+    "ytdl-core": "^4.11.0"
+  }
+}

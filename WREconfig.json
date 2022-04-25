@@ -1,0 +1,15 @@
+{
+    "prefix": ">",
+    "sandbox_dirname": "convert_sandbox",
+    "toplay_dirname": "toplay",
+    "settings_dirname": "settings",
+    "yadisk_wav_path": "WAV/",
+    "wavlib_path": "D:/Music/Wav_Music/",
+    "max_create_duration_minutes": 10,
+    "max_toplay_duration_minutes": 7.5,
+    "max_wavfiles_uploaded": 15,
+    "min_file_inx_range": 10000,
+    "max_toplay_foldersize_gb": 10,
+    "timeout_before_play_ms": 750, 
+    "embed_color_hex": "#87cefa"
+}
