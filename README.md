@@ -28,6 +28,9 @@ _Bot is recommended to be placed with one of the administrators of one thematic 
 
 ## Tech
 ---
+
+>Note: **At the moment Waver.RE only supports Russian for the interface** 
+
 ### **Used modules**
 
 Software for extracting audio from videos: [FFmpeg](https://ffmpeg.org/).

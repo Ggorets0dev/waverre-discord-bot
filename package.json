@@ -1,6 +1,6 @@
 {
   "name": "waver.re_discord",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extract wav containers from Youtube and play them in voice channels (Discord)",
   "main": "WaverRE.js",
   "scripts": {

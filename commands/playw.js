@@ -106,10 +106,6 @@ module.exports = {
                         server_queue.pause = false;
                     }    
                     
-                    // if (!songs_found){
-                    //     exfunc.Logger('info', `No videos were found during search (query by ${message.author.username}#${message.author.discriminator}: ${query})`, path.basename(__filename));
-                    //     return message.channel.send(`<@${message.author.id}>\n :anger: **Не удалось найти аудиозаписи по данному запросу**`); 
-                    // }
                     exfunc.Logger('info', `Around ${songs_found.youtube.length + songs_found.wavlib.length} videos were found during search (query by ${message.author.username}#${message.author.discriminator}: ${query})`, path.basename(__filename));
 
                     if (songs_found.youtube.length && songs_found.youtube[0].lev >= songs_found.wavlib[0].lev) args[0] = String(songs_found.wavlib[0].lib_inx + 1);

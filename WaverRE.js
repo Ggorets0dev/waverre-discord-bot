@@ -9,10 +9,6 @@ const package = require('./package.json');
 require('dotenv').config();
 
 
-// TODO: Create opportunity to change bot language in config
-// TODO: GitHub deploy (after RantoVox finally deploy)
-
-
 figlet.text('Waver . RE', {
     font: 'ANSI Shadow',
     horizontalLayout: 'default',
@@ -22,6 +18,7 @@ figlet.text('Waver . RE', {
 }, (err, data) => {
     if (err) return ExFunc.Logger("error", 'An error occurred during the drawing of the logo by figlet module', path.basename(__filename));
     console.log('\n\n' + data);
+    console.log('Developed by Ggorets0, original GitHub page: https://github.com/Ggorets0dev/Waver.RE-Bot\n\n')
 });
 
 
