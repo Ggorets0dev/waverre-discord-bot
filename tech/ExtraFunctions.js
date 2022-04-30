@@ -1,4 +1,3 @@
-const config = require('./WREconfig.json');
 const path = require('path');
 const yadisk = require('yandex-disk').YandexDisk;
 const fs = require('fs');
@@ -7,6 +6,7 @@ const levenshtein = require('fast-levenshtein');
 const yts = require('yt-search');
 const chalk = require("chalk");
 
+const config = require(path.join(__dirname, '..', 'WREconfig.json'));
 
 module.exports = {
     async Logger(type, msg, module_name){
@@ -206,38 +206,38 @@ module.exports = {
                 '(Official Lyric Video)'],
         }
 
-        if (!fs.existsSync(config.toplay_dirname)) fs.mkdirSync(config.toplay_dirname);
+        if (!fs.existsSync(path.join(__dirname, '..', config.toplay_dirname))) fs.mkdirSync(path.join(__dirname, '..', config.toplay_dirname));
         else {
-            toplay_files = fs.readdirSync(path.join(__dirname, config.toplay_dirname));
-            for (toplay_f of toplay_files) fs.unlinkSync(path.join(__dirname, config.toplay_dirname, toplay_f));
+            toplay_files = fs.readdirSync(path.join(__dirname, '..', config.toplay_dirname));
+            for (toplay_f of toplay_files) fs.unlinkSync(path.join(__dirname, '..', config.toplay_dirname, toplay_f));
         }
         
-        if (!fs.existsSync(config.sandbox_dirname)) fs.mkdirSync(config.sandbox_dirname);
+        if (!fs.existsSync(path.join(__dirname, '..', config.sandbox_dirname))) fs.mkdirSync(path.join(__dirname, '..', config.sandbox_dirname));
         else {
-            sandbox_files = fs.readdirSync(path.join(__dirname, config.sandbox_dirname));
-            for (sandbox_f of sandbox_files) fs.unlinkSync(path.join(__dirname, config.sandbox_dirname, sandbox_f));
+            sandbox_files = fs.readdirSync(path.join(__dirname, '..', config.sandbox_dirname));
+            for (sandbox_f of sandbox_files) fs.unlinkSync(path.join(__dirname, '..', config.sandbox_dirname, sandbox_f));
         }
 
-        if (!fs.existsSync(config.settings_dirname)) {
-            fs.mkdirSync(config.settings_dirname);
-            for (settings_file of available_settings_filenames) fs.openSync(path.join(__dirname, config.settings_dirname, settings_file), 'w');
+        if (!fs.existsSync(path.join(__dirname, '..', config.settings_dirname))) {
+            fs.mkdirSync(path.join(__dirname, '..', config.settings_dirname));
+            for (settings_file of available_settings_filenames) fs.openSync(path.join(__dirname, '..', config.settings_dirname, settings_file), 'w');
             
-            fs.appendFileSync(path.join(__dirname, config.settings_dirname, 'todel_title_parts.txt'), startup_whitelist_comp.todel_title_parts.join('\n'));
+            fs.appendFileSync(path.join(__dirname, '..', config.settings_dirname, 'todel_title_parts.txt'), startup_whitelist_comp.todel_title_parts.join('\n'));
         
             this.Logger('warning', 'Сustom settings folder was not detected. It was created along with the special files and their initial data, if it exists', path.basename(__filename))
         }
         else {
-            settings_files = fs.readdirSync(path.join(__dirname, config.settings_dirname));
-            for (settings_f of settings_files) if (available_settings_filenames.indexOf(settings_f) == -1) fs.unlinkSync(path.join(__dirname, config.settings_dirname, settings_f)); 
+            settings_files = fs.readdirSync(path.join(__dirname, '..', config.settings_dirname));
+            for (settings_f of settings_files) if (available_settings_filenames.indexOf(settings_f) == -1) fs.unlinkSync(path.join(__dirname, '..', config.settings_dirname, settings_f)); 
         }
 
-        home_files = fs.readdirSync(__dirname);
-        for (home_f of home_files) if (home_f.endsWith('.webm')) fs.unlinkSync(path.join(__dirname, home_f));
+        home_files = fs.readdirSync(path.join(__dirname, '..'));
+        for (home_f of home_files) if (home_f.endsWith('.webm')) fs.unlinkSync(path.join(__dirname, '..', home_f));
     },
 
     isLibWorthy(track_title){
 		track_title = track_title.toLowerCase();
-        let towavlib_artists_path = path.join(__dirname, config.settings_dirname, 'towavlib_artists.txt');
+        let towavlib_artists_path = path.join(__dirname, '..', config.settings_dirname, 'towavlib_artists.txt');
 
         if (fs.existsSync(towavlib_artists_path) && fs.readFileSync(towavlib_artists_path, 'utf-8').length != 0) {
             let wavlib = this.GetWavLib('lower');
@@ -257,9 +257,9 @@ module.exports = {
         }
         else if (fs.existsSync(towavlib_artists_path)) this.Logger('warning', 'No artists in the whitelist are detected, adding to the WAV audio library does not happen', path.basename(__filename));
 		else {
-            if (!fs.existsSync(config.settings_dirname)) fs.mkdirSync(config.settings_dirname);
+            if (!fs.existsSync(path.join(__dirname, '..', config.settings_dirname))) fs.mkdirSync(path.join(__dirname, '..', config.settings_dirname));
             
-            fs.openSync(path.join(__dirname, config.settings_dirname, 'towavlib_artists.txt'), 'w');
+            fs.openSync(path.join(__dirname, '..', config.settings_dirname, 'towavlib_artists.txt'), 'w');
             this.Logger('warning', 'Artist whitelist file wasnt found in the settings folder, аn empty file was created', path.basename(__filename));
         }                                        
 
@@ -271,7 +271,7 @@ module.exports = {
     },
 
     FilterTrackTitle(title){
-        todel_title_parts_path = path.join(__dirname, config.settings_dirname, 'todel_title_parts.txt');
+        todel_title_parts_path = path.join(__dirname, '..', config.settings_dirname, 'todel_title_parts.txt');
         todel = ['`', '"', "'"];
 
         if (fs.existsSync(todel_title_parts_path) && fs.readFileSync(todel_title_parts_path, 'utf-8').length != 0) {

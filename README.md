@@ -2,7 +2,7 @@
 Discord bot for extracting WAV audio tracks from YouTube videos and playing them in the server's voice channels.
 
 <p align='center'>
-       <img height=350 src="Waver.RE_Logo.png"/>
+       <img height=400 src="materials/Waver.RE_Logo.png"/>
 </p>
 
 <p align='center'>
@@ -65,7 +65,7 @@ The following steps are required for Waver.RE to work correctly:
 3) Create your own **.env** file in bot folder with the **DISCORD_TOKEN** and **YADISK_TOKEN** variables
 4) Download and install [FFmpeg](https://ffmpeg.org/) in your system **(don't forget to add it to PATH)**
 
-
+_**Bot requires the following intents to work correctly:** Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES. Read more about intents on [Discord.js](https://discord.js.org/#/) site._
 
 ## Usage
 ---

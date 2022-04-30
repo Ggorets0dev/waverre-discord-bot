@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const figlet = require('figlet');
 const Discord = require('discord.js');
-const ExFunc = require('./ExtraFunctions.js');
+const ExFunc = require('./tech/ExtraFunctions.js');
 
 const config = require('./WREconfig.json');
 const package = require('./package.json');
