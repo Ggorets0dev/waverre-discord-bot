@@ -1,5 +1,6 @@
 {
     "prefix": ">",
+    "language": "RUS",
     "sandbox_dirname": "convert_sandbox",
     "toplay_dirname": "toplay",
     "settings_dirname": "settings",

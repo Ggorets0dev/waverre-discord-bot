@@ -1,5 +1,5 @@
 # Waver.RE Discord Bot
-Discord bot for extracting WAV audio tracks from YouTube videos and playing them in the server's voice channels.
+Discord bot for extracting WAV audio tracks from YouTube videos and playing them in the server's voice channels. Supported interface languages: **Russian, English.**
 
 <p align='center'>
        <img height=400 src="materials/Waver.RE_Logo.png"/>
@@ -28,8 +28,6 @@ _Bot is recommended to be placed with one of the administrators of one thematic 
 
 ## Tech
 ---
-
->Note: **At the moment Waver.RE only supports Russian for the interface** 
 
 ### **Used modules**
 

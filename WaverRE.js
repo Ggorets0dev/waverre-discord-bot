@@ -2,10 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const figlet = require('figlet');
 const Discord = require('discord.js');
-const ExFunc = require('./tech/ExtraFunctions.js');
 
 const config = require('./WREconfig.json');
 const package = require('./package.json');
+const exfunc = require('./tech/ExtraFunctions.js');
+
+
+var [localization, locale] = [null, null]; // * Will be loaded during the initial startup
 require('dotenv').config();
 
 
@@ -16,30 +19,43 @@ figlet.text('Waver . RE', {
     width: 80,
     whitespaceBreak: true
 }, (err, data) => {
-    if (err) return ExFunc.Logger("error", 'An error occurred during the drawing of the logo by figlet module', path.basename(__filename));
-    console.log('\n\n' + data);
-    console.log('Developed by Ggorets0, original GitHub page: https://github.com/Ggorets0dev/Waver.RE-Bot\n\n')
+    if (err) return exfunc.Logger('error', 'An error occurred during startup preparing', path.basename(__filename));
+    
+    // * Cleaning old files if they exist
+    exfunc.StartupPreparing();
+
+    console.log(`\n\n${data}`);
+    console.log(` Developed by Ggorets0dev, original GitHub page: https://github.com/Ggorets0dev/Waver.RE-Bot (version: ${package.version})\n`)
+
+    // * Initiating localization
+    localization = require('./tech/localization.js');
+    if (localization[config.language]) {
+        locale = localization[config.language];
+        exfunc.Logger('success', `Interface language successfully connected: ${config.language}`, path.basename(__filename));
+    }
+    else {
+        locale = localization['ENG'];
+        exfunc.Logger('warning', 'Failed to connect locale from configuration file, default locale will be selected: ENG', path.basename(__filename));
+    }
+    
+    if (!localization.CheckEquivalence()) exfunc.Logger('error', 'Inequality of properties was found in the available locations', path.basename(__filename));
 });
-
-
-// * Cleaning old files if they exist
-ExFunc.StartupPreparing();
 
 
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES] });
 
 client.commands = new Discord.Collection();
 
-const command_files = fs.readdirSync(path.join(__dirname, "commands"));
+const command_files = fs.readdirSync(path.join(__dirname, 'commands'));
 for (const cmd of command_files){
-    const command = require(path.join(__dirname, "commands", cmd));
+    const command = require(path.join(__dirname, 'commands', cmd));
     client.commands.set(command.name, command);
 }
 
 
 client.on('ready', () => {
-    ExFunc.Logger("success", `Successfully started up and logged on (version: ${package.version})`, path.basename(__filename));
-    client.user.setPresence({ activities: [{ name: `${config.prefix}helpw | ${config.prefix}aboutw` }] });
+    exfunc.Logger('success', 'Successfully logged in Discord', path.basename(__filename));
+    client.user.setPresence( { activities: [{ name: `${config.prefix}helpw | ${config.prefix}aboutw` }] } );
 });
 
 
@@ -50,7 +66,10 @@ client.on('messageCreate', message => {
     const req = args.shift().toLowerCase();
 
     const command = client.commands.get(req) || client.commands.find(a => a.aliases && a.aliases.includes(req))
-    if (command) command.execute(message, req, args, config, ExFunc, Discord);
+    if (command) {
+        if (!locale) locale = localization['ENG'];
+        command.execute(message, req, args, config, exfunc, locale, Discord);
+    }
 });
 
 

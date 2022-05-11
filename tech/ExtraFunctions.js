@@ -9,7 +9,7 @@ const chalk = require("chalk");
 const config = require(path.join(__dirname, '..', 'WREconfig.json'));
 
 module.exports = {
-    async Logger(type, msg, module_name){
+    async Logger(type='INFO', msg, module_name=path.basename(__filename)) {
         type = type.toUpperCase();
         let date = (new Date()).toLocaleString().split(',').join('');
         let type_colored;
@@ -33,7 +33,7 @@ module.exports = {
         }, Math.floor(Math.random()*100));
     },
 
-    GetWavLib(register='normal'){
+    GetWavLib(register='normal') {
         register = register.toLowerCase();
         if (register != "normal" && register != "lower" && register != "upper"){
             this.Logger('error', 'Wrong register was specified when requesting a WAV audio library', path.basename(__filename));
@@ -65,7 +65,7 @@ module.exports = {
         return {filenames: wavlib_files, titles: wavlib_tracks};
     },
 
-    async GetDownloadItag(url){
+    async GetDownloadItag(url) {
         let required_itags = [251, 250, 249];
 
         try{
@@ -98,7 +98,7 @@ module.exports = {
         }
     },
 
-    async FindAudio(query){
+    async FindAudio(query) {
         let wavlib = this.GetWavLib();
         let [wavlib_tracks, wavlib_filenames] = [wavlib.titles, wavlib.filenames];
         
@@ -155,7 +155,7 @@ module.exports = {
         return { youtube: youtube_videos, wavlib: wavlib_videos };
     },
 
-    CheckYaSpace(){
+    CheckYandexSpace() {
         let disk = new yadisk(process.env.YADISK_TOKEN);
         disk.readdir(config.yadisk_wav_path, (err, tracks_uploaded) => {
             if (err) {
@@ -188,7 +188,7 @@ module.exports = {
         }); 
     },
 
-    StartupPreparing(){
+    async StartupPreparing() {
         let available_settings_filenames = ['towavlib_artists.txt', 'todel_title_parts.txt'];
         let startup_whitelist_comp = {
             todel_title_parts: ['(16bit_1500kbs)',
@@ -233,9 +233,11 @@ module.exports = {
 
         home_files = fs.readdirSync(path.join(__dirname, '..'));
         for (home_f of home_files) if (home_f.endsWith('.webm')) fs.unlinkSync(path.join(__dirname, '..', home_f));
+    
+        this.Logger('success', 'Successfully finished preparing directories and files', path.basename(__filename));
     },
 
-    isLibWorthy(track_title){
+    isLibWorthy(track_title) {
 		track_title = track_title.toLowerCase();
         let towavlib_artists_path = path.join(__dirname, '..', config.settings_dirname, 'towavlib_artists.txt');
 
@@ -270,7 +272,7 @@ module.exports = {
         return /^[\x00-\x7F]*$/.test(str);
     },
 
-    FilterTrackTitle(title){
+    FilterTrackTitle(title) {
         todel_title_parts_path = path.join(__dirname, '..', config.settings_dirname, 'todel_title_parts.txt');
         todel = ['`', '"', "'"];
 
@@ -283,7 +285,7 @@ module.exports = {
         return title;
     },
 
-    UnpackLayeredArray(array){
+    UnpackLayeredArray(array) {
         for (let i = 0; i < array.length; i += 1){
             if (array[i].length){
                 const subarray = array.slice(0, i);
