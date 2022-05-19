@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 
 const config = require('./WREconfig.json');
 const package = require('./package.json');
-const exfunc = require('./tech/ExtraFunctions.js');
+const exfunc = require('./tech/extra_functions.js');
 
 
 var [localization, locale] = [null, null]; // * Will be loaded during the initial startup
@@ -22,7 +22,7 @@ figlet.text('Waver . RE', {
     if (err) return exfunc.Logger('error', 'An error occurred during startup preparing', path.basename(__filename));
     
     // * Cleaning old files if they exist
-    exfunc.StartupPreparing();
+    exfunc.FileStartupPreparing();
 
     console.log(`\n\n${data}`);
     console.log(` Developed by Ggorets0dev, original GitHub page: https://github.com/Ggorets0dev/Waver.RE-Bot (version: ${package.version})\n`)
