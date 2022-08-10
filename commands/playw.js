@@ -14,7 +14,6 @@ module.exports = {
     description: "Playing music in voice channels",
     playlists: ['all', 'all_random'],
     async execute(message, cmd, args, config, exfunc, locale, Discord) {
-
         // * Checking if there are problems with permissions or member not in VCH
         const voice_channel = message.member.voice.channel;
         if (!voice_channel) return message.channel.send(`<@${message.author.id}>\n ${locale.not_in_vch_error}`);
@@ -34,8 +33,9 @@ module.exports = {
 
 
         // * Substitution of commands in case of selecting choosew (chw)
+        // * Arguments: inx of chosen track
         if (cmd == 'choosew' || cmd == 'chw') {
-            
+            // * Checking arguments
             if (args.length != 1)            return message.channel.send(`<@${message.author.id}>\n ${locale.arg_wrong_count_error}`);
             else if (isNaN(Number(args[0]))) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_value_error}`);
 
@@ -56,15 +56,14 @@ module.exports = {
 
 
         // * Selecting command between aliases (except choosew (chw))
+        // * Arguments: inx of track from wavlib or youtube link or query for search in youtube
         if (cmd == 'playw' || cmd == 'plw') {
-            
             // * Checking arguments
             if (args.length == 0) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_wrong_count_error}`);
             
-
             // * Check for used space in toplay folder using songs iterating, it might be more than expected
             let predicted_toplay_size = 0;
-            for (var pair of mscqueue.entries()) {
+            for (let pair of mscqueue.entries()) {
                 let [guild_id, queue] = [pair[0], pair[1]];
                 if (queue.songs) for (song_obj of queue.songs) if (song_obj.type == 'youtube') predicted_toplay_size += song_obj.size; 
             }
@@ -172,33 +171,29 @@ module.exports = {
                     playlist_mode = true;
 
                     if (args[0].indexOf('all') != -1) {
-                        let wavlib = exfunc.GetWavLib();
-                        let playlist_name = args[0];
+                        const wavlib = exfunc.GetWavLib();
 
-                        for (let i=0; i < wavlib.filenames.length; i+=1) {
-                            let file_stats = fs.statSync(config.wavlib_path + wavlib.filenames[i]);
-                            
-                            let song_object_constructor = {
+                        for (let i=0; i < wavlib.filenames.length; i+=1) {                
+                            playlist_requested.push({
                                 title: wavlib.titles[i], 
                                 path: config.wavlib_path + wavlib.filenames[i], 
                                 url: null, 
                                 type: 'wavlib',
-                                size: file_stats.size / Math.pow(1024, 2)
-                            };
-                            playlist_requested.push(song_object_constructor);
+                                size: fs.statSync(config.wavlib_path + wavlib.filenames[i]).size / Math.pow(1024, 2)
+                            });
                         }
-                        if (playlist_name == 'all_random') playlist_requested = playlist_requested.sort(() => Math.random() - 0.5);
+                        if (args[0] == 'all_random') playlist_requested = playlist_requested.sort(() => Math.random() - 0.5);
                     }
-                    message.channel.send(locale.playlist_requested_info.replace('[playlist_name]', playlist_name));
+                    message.channel.send(locale.playlist_requested_info.replace('[playlist_name]', args[0]));
                     return resolve();
-                    // * Push here other playlists using else if
                 }
+                // * Push here other playlists using else if
             });
 
             // * Filling song object with vars of song, collected in Promise and start playing
             // * If playlist requested, it's already created, so skip filling, only start playing
             getting_vars.then(() => {
-                var song;
+                let song;
                 if (!playlist_mode) {
                     song = {
                         title: song_name, 
@@ -212,7 +207,7 @@ module.exports = {
 
                 // * First track and no queue in main base
                 if (!server_queue) {
-                    const queue_patent = {
+                    const queue_default = {
                         voice_channel: voice_channel,
                         text_channel: message.channel,
                         connection: null,
@@ -223,8 +218,8 @@ module.exports = {
                         todelete: []
                     }
 
-                    mscqueue.set(message.guild.id, queue_patent);
-                    server_queue = mscqueue.get(message.guild.id);
+                    mscqueue.set(message.guild.id, queue_default);
+                    server_queue = queue_default;
     
                     // * Joining VCH or taking connection info from existed one
                     try {
@@ -243,7 +238,7 @@ module.exports = {
                                 starting_track_info: locale.starting_track_info
                             }
 
-                            MusicPlayer(message, server_queue.songs[0], config, exfunc, mp_locale);
+                            PlayMusic(message, server_queue.songs[0], config, exfunc, mp_locale);
                         }, config.timeout_before_play_ms);
                     } catch(err) {
                         mscqueue.delete(message.guild.id);
@@ -260,124 +255,94 @@ module.exports = {
                 }
             }, null);
         }
-        
-        else if (cmd == 'pausew' || cmd == 'paw') {
-            
+
+        else if (cmd != 'findw' && cmd != 'fiw' && cmd != 'audinfw' && cmd != 'auw'){
             if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            else if (server_queue.pause)               return message.channel.send(locale.already_paused_info.replace('[track_title]', server_queue.songs[0].title));
 
-            await server_queue.player.pause();
-            server_queue.pause = true;
-            mscqueue.set(message.guild.id, server_queue);
-            
-            message.channel.send(locale.successfully_paused_info.replace('[track_title]', server_queue.songs[0].title));
-        }
-       
-        else if (cmd == 'resumew' || cmd == 'rew') {
-            
-            if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            else if (!server_queue.pause)              return message.channel.send(locale.already_playing_info.replace('[track_title]', server_queue.songs[0].title));
-
-            await server_queue.player.unpause();
-            server_queue.pause = false;
-            mscqueue.set(message.guild.id, server_queue);
-            
-            message.channel.send(locale.successfully_playing_info.replace('[track_title]', server_queue.songs[0].title));
-        }
-       
-        else if (cmd == 'stopw' || cmd == 'stw') {
-            
-            if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            
-            await server_queue.player.unpause();
-            await server_queue.player.stop();
-            if (server_queue.songs.length != 0) {
-                for (song of server_queue.songs) if (song.type == 'youtube') server_queue.todelete.push(song.path);
-                server_queue.songs = [];
-            }
-            mscqueue.set(message.guild.id, server_queue);
-            
-            message.channel.send(locale.successfully_stoped_info);
-        }
-
-        else if (cmd == 'loopw' || cmd == 'low') {
-            
-            if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            
-            server_queue.loop = !server_queue.loop;
-            mscqueue.set(message.guild.id, server_queue);
-
-            if (!server_queue.loop) message.channel.send(locale.successfully_loop_disabled_info);
-            else                    message.channel.send(locale.successfully_loop_enabled_info);
-        }
-
-        else if (cmd == 'skipw' || cmd == 'skw') {
-            
-            if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            
-            await server_queue.player.stop();
-            message.channel.send(locale.successfully_skipped_info.replace('[track_title]', server_queue.songs[0].title));
-        }
-
-        else if (cmd == 'audinfw' || cmd == 'auw') {
-            
-            if (!server_queue || !server_queue.player || !server_queue.songs[0]) return message.channel.send(locale.empty_queue_error);
-            
-            let loop_value;
-            let playing_name;
-
-            if (server_queue.loop)  loop_value = locale.audinf_embed.loop_enabled_value;
-            else                    loop_value = locale.audinf_embed.loop_disabled_value;
-            if (server_queue.pause) playing_name = locale.audinf_embed.paused_name;
-            else                    playing_name = locale.audinf_embed.playing_name;
-
-            const audinfw_embed = new Discord.MessageEmbed()
-            .setColor(config.embed_color_hex)
-            .setTitle(locale.audinf_embed.title)
-            .addFields(
-                { name: locale.audinf_embed.loop_name, value: loop_value },
-                { name: playing_name, value: locale.audinf_embed.audio_value.replace('[track_title]', server_queue.songs[0].title) },
-                { name: locale.audinf_embed.track_adress_name, value: locale.audinf_embed.track_adress_value.replace('[track_adress]', server_queue.songs[0].type) }
-            );
-            message.channel.send( { embeds: [audinfw_embed] } );
-        }
-
-        else if (cmd == 'queuew' || cmd == 'quw') {
-            
-            if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
-            else if (server_queue.songs.length == 1)   return message.channel.send(locale.empty_queue_info);
-            
-            let songs_qu = server_queue.songs;
-
-            let embed_inx = 1;
-            let buffer;
-            let queue_embed;
-            let last_used_inx = 1;
-            while (last_used_inx < songs_qu.length) {
-                buffer = "";
+            // * Doesn't expect an argument
+            else if (cmd == 'pausew' || cmd == 'paw') {
+                if (server_queue.pause) return message.channel.send(locale.already_paused_info.replace('[track_title]', server_queue.songs[0].title));
+    
+                await server_queue.player.pause();
+                server_queue.pause = true;
+                mscqueue.set(message.guild.id, server_queue);
                 
-                while (last_used_inx < songs_qu.length && buffer.length + songs_qu[last_used_inx].title.length < 1010) {
-                    buffer += `**${last_used_inx})** ${songs_qu[last_used_inx].title} \n`;
-                    last_used_inx += 1;
+                message.channel.send(locale.successfully_paused_info.replace('[track_title]', server_queue.songs[0].title));
+            }
+           
+            // * Doesn't expect an argument
+            else if (cmd == 'resumew' || cmd == 'rew') {
+                if (!server_queue.pause) return message.channel.send(locale.already_playing_info.replace('[track_title]', server_queue.songs[0].title));
+    
+                await server_queue.player.unpause();
+                server_queue.pause = false;
+                mscqueue.set(message.guild.id, server_queue);
+                
+                message.channel.send(locale.successfully_playing_info.replace('[track_title]', server_queue.songs[0].title));
+            }
+           
+            // * Doesn't expect an argument
+            else if (cmd == 'stopw' || cmd == 'stw') {        
+                await server_queue.player.unpause();
+                await server_queue.player.stop();
+                if (server_queue.songs.length != 0) {
+                    for (song of server_queue.songs) if (song.type == 'youtube') server_queue.todelete.push(song.path);
+                    server_queue.songs = [];
                 }
+                mscqueue.set(message.guild.id, server_queue);
                 
-                queue_embed = new Discord.MessageEmbed()
-                .setColor(config.embed_color_hex)
-                .setTitle(locale.queue_embed.title)
-                .addFields(
-                    { name: locale.queue_embed.name.replace('[embed_inx]', embed_inx), value: buffer }
-                );
-                message.channel.send( { embeds: [queue_embed] } );
-
-                embed_inx += 1;
+                message.channel.send(locale.successfully_stoped_info);
             }
-        }
+    
+            // * Doesn't expect an argument
+            else if (cmd == 'loopw' || cmd == 'low') {            
+                server_queue.loop = !server_queue.loop;
+                mscqueue.set(message.guild.id, server_queue);
+    
+                if (!server_queue.loop) message.channel.send(locale.successfully_loop_disabled_info);
+                else                    message.channel.send(locale.successfully_loop_enabled_info);
+            }
+    
+            // * Doesn't expect an argument
+            else if (cmd == 'skipw' || cmd == 'skw') {      
+                await server_queue.player.stop();
+                message.channel.send(locale.successfully_skipped_info.replace('[track_title]', server_queue.songs[0].title));
+            }
 
+            // * Doesn't expect an argument
+            else if (cmd == 'queuew' || cmd == 'quw') {
+                if (server_queue.songs.length == 1)   return message.channel.send(locale.empty_queue_info);
+                
+                let songs_qu = server_queue.songs;
+    
+                let embed_inx = 1;
+                let buffer;
+                let queue_embed;
+                let last_used_inx = 1;
+                while (last_used_inx < songs_qu.length) {
+                    buffer = "";
+                    
+                    while (last_used_inx < songs_qu.length && buffer.length + songs_qu[last_used_inx].title.length < 1010) {
+                        buffer += `**${last_used_inx})** ${songs_qu[last_used_inx].title} \n`;
+                        last_used_inx += 1;
+                    }
+                    
+                    queue_embed = new Discord.MessageEmbed()
+                    .setColor(config.embed_color_hex)
+                    .setTitle(locale.queue_embed.title)
+                    .addFields(
+                        { name: locale.queue_embed.name.replace('[embed_inx]', embed_inx), value: buffer }
+                    );
+                    message.channel.send( { embeds: [queue_embed] } );
+    
+                    embed_inx += 1;
+                }
+            }
+
+       // * Arguments: Deletion mode and the number (index or quantity)
         else if (cmd == 'deletew' || cmd == 'dew') {
-            
             if (args.length != 2) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_wrong_count_error}`);
             else if (isNaN(Number(args[1])) || Number(args[1]) < 1 || (args[0] != 'last' && args[0] != 'num')) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_value_error}`);
-            else if (!server_queue || !server_queue.player) return message.channel.send(locale.empty_queue_error);
         
             let [mode, number] = [args[0], Number(args[1])];
             let songs_qu = server_queue.songs;
@@ -402,60 +367,84 @@ module.exports = {
 
             mscqueue.set(message.guild.id, server_queue);
         }
+        }
 
-        else if (cmd == 'findw' || cmd == 'fiw') {
-            
-            if (!args.length) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_wrong_count_error}`);
+        else {
+            // * Doesn't expect an argument
+            if (cmd == 'audinfw' || cmd == 'auw') {
+                if (!server_queue || !server_queue.player || !server_queue.songs[0]) return message.channel.send(locale.empty_queue_error);
+                
+                let loop_value;
+                let playing_name;
 
-            // ! Block protection is disabled
-            //let pause_save = false;
-            // if (server_queue && server_queue.player && !server_queue.pause) {
-            //     await server_queue.player.pause();
-            //     server_queue.pause = true;
-            //     pause_save = true;
-            // }
-            
-            let query = args.join(' ');
-            let songs_found = await exfunc.FindAudio(query);
+                if (server_queue.loop)  loop_value = locale.audinf_embed.loop_enabled_value;
+                else                    loop_value = locale.audinf_embed.loop_disabled_value;
+                if (server_queue.pause) playing_name = locale.audinf_embed.paused_name;
+                else                    playing_name = locale.audinf_embed.playing_name;
 
-            let all_music = [...songs_found.wavlib, ...songs_found.youtube];
+                const audinfw_embed = new Discord.MessageEmbed()
+                .setColor(config.embed_color_hex)
+                .setTitle(locale.audinf_embed.title)
+                .addFields(
+                    { name: locale.audinf_embed.loop_name, value: loop_value },
+                    { name: playing_name, value: locale.audinf_embed.audio_value.replace('[track_title]', server_queue.songs[0].title) },
+                    { name: locale.audinf_embed.track_adress_name, value: locale.audinf_embed.track_adress_value.replace('[track_adress]', server_queue.songs[0].type) }
+                );
+                message.channel.send( { embeds: [audinfw_embed] } );
+            }
 
-            // ! Block protection is disabled
-            // if (server_queue && server_queue.player && pause_save) {
-            //     await server_queue.player.unpause();
-            //     server_queue.pause = false;
-            // }
-
-            
-            exfunc.Logger('info', `Around ${all_music.length} videos were found during search (query by ${message.author.username}#${message.author.discriminator}: ${query})`, path.basename(__filename));
-
-
-            search_base.set(message.member.guild.id, all_music);
-            
-            
-            let [wavlib_value, youtube_value] = ['', ''];
-            
-            for (let i=0; i < songs_found.wavlib.length; i += 1) wavlib_value += `**(${i+1})** ${songs_found.wavlib[i].title}\n\n`;
-
-            if (songs_found.youtube.length) for (let i=0; i < songs_found.youtube.length; i += 1) youtube_value += `**(${i+6})** ${songs_found.youtube[i].title} *(${songs_found.youtube[i].duration_tmstmp})*\n\n`
-            else youtube_value = locale.no_audio_found_youtube_error;
-            
-
-            const findw_embed = new Discord.MessageEmbed()
-            .setColor(config.embed_color_hex)
-            .setTitle(locale.find_embed.title)
-            .addFields(
-                { name: locale.find_embed.wavlib_name, value: wavlib_value },
-                { name: locale.find_embed.youtube_name, value: youtube_value }
-            )
-            .setFooter( { text: locale.find_embed.footer } );
-            return message.channel.send( { embeds: [findw_embed] } );
+            // * * Arguments: string as query for search
+            else if (cmd == 'findw' || cmd == 'fiw') {
+                if (!args.length) return message.channel.send(`<@${message.author.id}>\n ${locale.arg_wrong_count_error}`);
+    
+                // ! Block protection is disabled
+                //let pause_save = false;
+                // if (server_queue && server_queue.player && !server_queue.pause) {
+                //     await server_queue.player.pause();
+                //     server_queue.pause = true;
+                //     pause_save = true;
+                // }
+                
+                let query = args.join(' ');
+                let songs_found = await exfunc.FindAudio(query);
+    
+                let all_music = [...songs_found.wavlib, ...songs_found.youtube];
+    
+                // ! Block protection is disabled
+                // if (server_queue && server_queue.player && pause_save) {
+                //     await server_queue.player.unpause();
+                //     server_queue.pause = false;
+                // }
+    
+                
+                exfunc.Logger('info', `Around ${all_music.length} videos were found during search (query by ${message.author.username}#${message.author.discriminator}: ${query})`, path.basename(__filename));
+    
+                search_base.set(message.member.guild.id, all_music);
+                
+                let wavlib_value = '';
+                for (let i=0; i < songs_found.wavlib.length; i += 1) wavlib_value += `**(${i+1})** ${songs_found.wavlib[i].title}\n\n`;
+    
+                let youtube_value = '';
+                if (songs_found.youtube.length) for (let i=0; i < songs_found.youtube.length; i += 1) youtube_value += `**(${i+6})** ${songs_found.youtube[i].title} *(${songs_found.youtube[i].duration_tmstmp})*\n\n`
+                else youtube_value = locale.no_audio_found_youtube_error;
+                
+    
+                const findw_embed = new Discord.MessageEmbed()
+                .setColor(config.embed_color_hex)
+                .setTitle(locale.find_embed.title)
+                .addFields(
+                    { name: locale.find_embed.wavlib_name, value: wavlib_value },
+                    { name: locale.find_embed.youtube_name, value: youtube_value }
+                )
+                .setFooter( { text: locale.find_embed.footer } );
+                return message.channel.send( { embeds: [findw_embed] } );
+            }
         }
     }
 }
 
 
-const MusicPlayer = async (msg, song, config, exfunc, mp_locale) => {
+const PlayMusic = async (msg, song, config, exfunc, mp_locale) => {
     let song_queue = mscqueue.get(msg.member.guild.id);
 
     // * Checking if song is undefined, so it's end of queue
@@ -506,7 +495,7 @@ const MusicPlayer = async (msg, song, config, exfunc, mp_locale) => {
             }
         }
         setTimeout(() => {
-            MusicPlayer(msg, song_queue.songs[0], config, exfunc, mp_locale);
+            PlayMusic(msg, song_queue.songs[0], config, exfunc, mp_locale);
         }, config.timeout_before_play_ms);
     });
     if (!song_queue.loop) song_queue.text_channel.send(mp_locale.starting_track_info.replace('[track_title]', song.title));

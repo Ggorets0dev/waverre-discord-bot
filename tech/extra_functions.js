@@ -4,9 +4,9 @@ const fs = require('fs');
 const ytdl = require('ytdl-core');
 const levenshtein = require('fast-levenshtein');
 const yts = require('yt-search');
-const chalk = require('chalk');
+const clr = require('ansi-colors');
 
-const config = require(path.join(__dirname, '..', 'WREconfig.json'));
+const config = require(path.join(__dirname, '..', 'config.json'));
 
 module.exports = {
     async Logger(type='INFO', msg, module_name=path.basename(__filename)) {
@@ -15,21 +15,21 @@ module.exports = {
         let type_colored;
         let msg_colored; 
 
-        if      (type == 'ERROR')      [type_colored, msg_colored] = [chalk.bold.red(type), chalk.bold.red(msg)];
-        else if (type == 'SUCCESS')    [type_colored, msg_colored] = [chalk.bold.green(type), chalk.bold.green(msg)];     
-        else if (type == 'WARNING')    [type_colored, msg_colored] = [chalk.bold.yellow(type), chalk.bold.yellow(msg)];
-        else if (type == 'INFO')       [type_colored, msg_colored] = [chalk.bold.white(type), chalk.bold.white(msg)];   
+        if      (type == 'ERROR')      [type_colored, msg_colored] = [clr.bold.red(type), clr.bold.red(msg)];
+        else if (type == 'SUCCESS')    [type_colored, msg_colored] = [clr.bold.green(type), clr.bold.green(msg)];     
+        else if (type == 'WARNING')    [type_colored, msg_colored] = [clr.bold.yellow(type), clr.bold.yellow(msg)];
+        else if (type == 'INFO')       [type_colored, msg_colored] = [clr.bold.white(type), clr.bold.white(msg)];   
         else                           return this.Logger(type='error', 'Unknown type of log detected, unable to write message down');
 
         let info_part = ` | ${type_colored}`;
         for (let i=0; i < 8 - type.length; i+=1) info_part += ' ';
 
-        let log_tocons = ' ' + chalk.bold.cyan(now_date) + info_part + '| ' + chalk.cyan(`<${module_name}>: `) + msg_colored;
+        let log_tocons = ' ' + clr.bold.cyan(now_date) + info_part + '| ' + clr.cyan(`<${module_name}>: `) + msg_colored;
         let log_tofile = now_date + info_part.split(type_colored).join(type) + '| ' + `<${module_name}>: ` + msg + '\n'; 
         
         await setTimeout(() => {
             console.log(log_tocons);
-            fs.appendFile('WRE_LOGS.log', log_tofile, (err)=>{ if (err) return console.log(err); });
+            fs.appendFileSync('LOGS.log', log_tofile);
         }, Math.floor(Math.random()*250));
     },
 
@@ -43,23 +43,17 @@ module.exports = {
         let wavlib_files = fs.readdirSync(config.wavlib_path);
         let wavlib_tracks = [];
         for (let i = 0; i < wavlib_files.length; i+=1) {
-            track = wavlib_files[i];
-            track = track.substr(0, track.length-4);
-            track = this.FilterTrackTitle(track);
-            wavlib_tracks.push(track);
+            track = wavlib_files[i].slice(0, wavlib_files[i].length-4);
+            wavlib_tracks.push(this.FilterTrackTitle(track));
         }
 
         if (register == 'lower') {
-            for (let i = 0; i < wavlib_files.length; i+=1) {
-                wavlib_files[i] = wavlib_files[i].toLowerCase();
-                wavlib_tracks[i] = wavlib_tracks[i].toLowerCase();
-            }
+            wavlib_files.map(filename => filename.toLowerCase());
+            wavlib_tracks.map(trackname => trackname.toLowerCase());
         }
         else if (register == 'upper') {
-            for (let i = 0; i < wavlib_files.length; i+=1) {
-                wavlib_files[i] = wavlib_files[i].toUpperCase();
-                wavlib_tracks[i] = wavlib_tracks[i].toUpperCase();
-            }
+            wavlib_files.map(filename => filename.toUpperCase());
+            wavlib_tracks.map(trackname => trackname.toUpperCase());
         }
 
         return { filenames: wavlib_files, titles: wavlib_tracks };
@@ -67,6 +61,7 @@ module.exports = {
 
     async GetDownloadItag(url) {
         const required_itags = [251, 250, 249];
+        let itags_available = [];
 
         try {
             const validate = await ytdl.validateURL(url);
@@ -74,8 +69,7 @@ module.exports = {
                 this.Logger('error', `Unsuccessful attempt to verify access to the video and get it's information (url: ${url})`, path.basename(__filename));
                 return null;
             }
-            
-            let itags_available = [];
+        
             const vid_info = await ytdl.getInfo(url);
             for (frmt of vid_info.formats) if (required_itags.includes(frmt.itag)) itags_available.push(frmt.itag);
             
@@ -84,9 +78,9 @@ module.exports = {
                 return null;
             }
 
-            itags_available.sort((e1,e2) => {
-                if (e1 > e2) return -1;
-                if (e1 < e2) return 1;
+            itags_available.sort((it1,it2) => {
+                if (it1 > it2) return -1;
+                if (it1 < it2) return 1;
                 return 0;
             });
 
@@ -99,18 +93,17 @@ module.exports = {
     },
 
     async FindAudio(query) {
-        const wavlib = this.GetWavLib();
-        let [wavlib_tracks, wavlib_filenames] = [wavlib.titles, wavlib.filenames];
-        
         query = query.toLowerCase();
         const search_results = await yts(query);
+        const wavlib = this.GetWavLib();
+        let wavlib_tracks = wavlib.titles;
 
         let youtube_videos = [];
         for (let vid of search_results.videos) {
-            if (vid.seconds / 60 > config.max_toplay_duration || vid.views < 5000) continue;
+            if (vid.seconds / 60 > config.max_toplay_duration || vid.views < config.min_youtube_video_views) continue;
 
             let verified_title;
-            if (vid.title.split('-').length == 1) verified_title = `${vid.author.name} - ${vid.title}`
+            if (vid.title.split('-').length < 2) verified_title = `${vid.author.name} - ${vid.title}`
             else verified_title = vid.title;
 
             youtube_videos.push({
@@ -134,18 +127,20 @@ module.exports = {
             });
         }
 
-        youtube_videos.sort((o1, o2) => {
-            if (o1.lev < o2.lev) return -1;
-            if (o1.lev > o2.lev) return 1;
+        // * Sort by match and then by views
+        youtube_videos.sort((v1, v2) => {
+            if (v1.lev < v2.lev) return -1;
+            if (v1.lev > v2.lev) return 1;
             
-            if (o1.views < o2.views) return 1;
-            if (o1.views > o2.views) return -1;
+            if (v1.views < v2.views) return 1;
+            if (v1.views > v2.views) return -1;
             return 0;
         });
 
-        wavlib_videos.sort((o1, o2) => {
-            if (o1.lev < o2.lev) return -1;
-            if (o1.lev > o2.lev) return 1;
+        // * Sort only by match
+        wavlib_videos.sort((v1, v2) => {
+            if (v1.lev < v2.lev) return -1;
+            if (v1.lev > v2.lev) return 1;
             return 0;
         });
 
@@ -161,17 +156,17 @@ module.exports = {
             if (err) this.Logger('error', `An error occurred while checking the cloud`, path.basename(__filename));
 
             else if (tracks_uploaded.length > config.max_wavfiles_uploaded - 1) {
-                let audiofiles_ondisk = [];
+                let audiofiles_on_disk = [];
 
-                for (file of tracks_uploaded) audiofiles_ondisk.push( { yad_obj: file, tmstmp: Number(new Date(file.creationDate).getTime()) } );
+                for (file of tracks_uploaded) audiofiles_on_disk.push( { yad_obj: file, tmstmp: Number(new Date(file.creationDate).getTime()) } );
 
-                audiofiles_ondisk.sort((o1, o2) => {
+                audiofiles_on_disk.sort((o1, o2) => {
                     if (o1.tmstmp > o2.tmstmp) return -1;
                     if (o1.tmstmp < o2.tmstmp) return 1;
                     return 0;
                 });
 
-                const files_to_del = audiofiles_ondisk.slice(0, tracks_uploaded.length - config.max_wavfiles_uploaded + 1);
+                const files_to_del = audiofiles_on_disk.slice(0, tracks_uploaded.length - config.max_wavfiles_uploaded + 1);
                 
                 for (file_td of files_to_del) {
                     let filename = file_td.yad_obj.displayName;
@@ -229,7 +224,7 @@ module.exports = {
         }
 
         const home_files = fs.readdirSync(path.join(__dirname, '..'));
-        for (home_f of home_files) if (home_f.endsWith('.webm')) fs.unlinkSync(path.join(__dirname, '..', home_f));
+        for (home_f of home_files) if (home_f.endsWith('.webm') || home_f.endsWith('.m4a')) fs.unlinkSync(path.join(__dirname, '..', home_f));
     
         this.Logger('success', 'Successfully finished preparing directories and files', path.basename(__filename));
     },
@@ -275,10 +270,13 @@ module.exports = {
 
         if (fs.existsSync(todel_title_parts_path) && fs.readFileSync(todel_title_parts_path, 'utf-8').length != 0) {
             todel = [...todel, ...fs.readFileSync(todel_title_parts_path, 'utf-8').split('\n')];
+
             for (let i = 0; i < todel.length; i+=1) if (todel[i].indexOf('\r') != -1) todel[i] = todel[i].replace('\r', '');
         }
         
+        
         for (elem_td of todel) while (title.indexOf(elem_td) != -1) title = title.replace(elem_td, '');
+        
         return title;
     },
 

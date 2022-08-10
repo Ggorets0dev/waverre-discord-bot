@@ -3,7 +3,7 @@ const path = require('path');
 const figlet = require('figlet');
 const Discord = require('discord.js');
 
-const config = require('./WREconfig.json');
+const config = require('./config.json');
 const package = require('./package.json');
 const exfunc = require('./tech/extra_functions.js');
 

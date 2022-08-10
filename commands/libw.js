@@ -15,7 +15,7 @@ module.exports = {
         if (!isNaN(Number(args[0])) && (Number(args[0]) > wavlib_files.length || Number(args[0]) < 1)) return message.channel.send(`<@${message.author.id}>\n ${locale.track_index_error.replace('[wavlib_files.length]', wavlib_files.length)}`);
 
 
-        // * Working with args
+        // * Looking for an argument and enter the appropriate mode
         if (args[0] == 'show') {
             for (let i=0; i < wavlib_tracks.length; i+=1) wavlib_tracks[i] = `**${(i+1)})** ${wavlib_tracks[i]}`;
             
@@ -35,7 +35,7 @@ module.exports = {
                 .addFields(
                     { name: locale.wavlib_embed.name.replace('[page_inx]', page_inx), value: buffer }
                 );
-                message.channel.send({embeds: [wavlib_embed]});
+                message.channel.send( { embeds: [wavlib_embed] } );
                 page_inx += 1;
             }
         }

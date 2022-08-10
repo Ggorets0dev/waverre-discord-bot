@@ -8,6 +8,7 @@
     "wavlib_path": "D:/Music/Wav_Music/",
     "max_create_duration_minutes": 10,
     "max_toplay_duration_minutes": 7.5,
+    "min_youtube_video_views": 5000,
     "max_wavfiles_uploaded": 15,
     "min_file_inx_range": 10000,
     "max_toplay_foldersize_gb": 10,

@@ -1,6 +1,6 @@
 const path = require('path');
 
-const config = require(path.join(__dirname, '..', 'WREconfig.json'));
+const config = require(path.join(__dirname, '..', 'config.json'));
 const package = require(path.join(__dirname, '..', 'package.json'));
 
 

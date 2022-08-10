@@ -1,5 +1,5 @@
 .env
-WRE_LOGS.log
+LOGS.log
 /convert_sandbox
 /node_modules
 /settings

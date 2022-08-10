@@ -55,7 +55,7 @@ module.exports = {
                     if (code != 0) {
                         if (fs.existsSync(result_path)) fs.unlinkSync(result_path);
                         
-                        exfunc.Logger('error', 'An error occurred during conversion', path.basename(__filename));
+                        exfunc.Logger('error', 'An error occurred during conversion ${(track_title)}', path.basename(__filename));
                         return message.channel.send(`<@${message.author.id}>\n ${locale.convert_error}`);
                     }
     
@@ -85,6 +85,7 @@ module.exports = {
                     // * Checking the situation on cloud storage
                     exfunc.CheckYandexSpace();
     
+                    // * Uploading created file
                     const disk = new yadisk(process.env.YADISK_TOKEN);
                     disk.uploadFile(ready_upload_path, config.yadisk_wav_path + filename_result, err => {
                         if (err) {
