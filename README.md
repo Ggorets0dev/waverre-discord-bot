@@ -86,6 +86,7 @@ The following commands are available in Waver.RE:
 *  **findw** *[query]* - Searching for audio in the WAV audio library and on Youtube.
 *  **choosew** *[№]* - Adding to the queue a track with the specified number from the database of found audio recordings (available only after calling findw)
 
+<p align='center'>
 
 | Command        | Alias       |
 |:--------------:|:-----------:|
@@ -99,6 +100,8 @@ The following commands are available in Waver.RE:
 | deletew        | dew         |
 | findw          | fiw         |
 | choosew        | chw         |
+
+</p>
 
 
 
