@@ -11,7 +11,10 @@ Discord bot for extracting WAV audio tracks from YouTube videos and playing them
     </a>
 </p>
 
-
+## Repository is archived
+---
+### **Reasons for archiving**
+The repository is archived due to changes in the Discord API. Requires package updates followed by adjustments to methods to be more up-to-date. The APIs of other services in use may also have been changed.
 
 ## Purpose
 ---
